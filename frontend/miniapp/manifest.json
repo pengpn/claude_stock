@@ -1,0 +1,17 @@
+{
+  "name": "智能股票分析",
+  "appid": "",
+  "description": "AI股票投资分析助手",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  }
+}
