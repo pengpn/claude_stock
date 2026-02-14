@@ -42,11 +42,11 @@
           <input
             v-model="stockCode"
             class="command-input"
-            placeholder="600519"
+            placeholder="600519 或 贵州茅台"
             :disabled="analyzing"
             @keyup.enter="startAnalyze"
             @input="validateStockCode"
-            maxlength="6"
+            maxlength="20"
           />
           <button
             class="execute-btn"
@@ -216,10 +216,11 @@ onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval)
 })
 
-// Validate stock code
+// Validate stock code or name
 const validateStockCode = () => {
   const code = stockCode.value.trim()
-  isValidCode.value = /^[0-9]{6}$/.test(code) || code === ''
+  // Accept 6-digit codes or Chinese characters (stock names)
+  isValidCode.value = /^[0-9]{6}$/.test(code) || /^[\u4e00-\u9fa5]+$/.test(code) || code === ''
 }
 
 // Save history
