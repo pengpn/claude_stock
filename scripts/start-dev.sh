@@ -34,10 +34,10 @@ echo "   Go服务 PID: $GO_PID"
 sleep 2
 
 # 启动前端
-echo "3. 启动小程序编译..."
-cd "$PROJECT_ROOT" && npm --prefix "$PROJECT_ROOT/frontend/miniapp" run dev:mp-weixin > /tmp/frontend.log 2>&1 &
+echo "3. 启动H5前端..."
+cd "$PROJECT_ROOT/frontend/h5" && npm run dev > /tmp/frontend-h5.log 2>&1 &
 FRONTEND_PID=$!
-echo "   前端编译 PID: $FRONTEND_PID"
+echo "   H5前端 PID: $FRONTEND_PID"
 
 # 保存PID
 echo "$PYTHON_PID" > "$PROJECT_ROOT/.dev.pid"
@@ -48,11 +48,11 @@ echo ""
 echo "=== 开发环境启动成功 ==="
 echo "Python服务: http://localhost:8001"
 echo "Go API: http://localhost:8000"
-echo "请在微信开发者工具中打开: $PROJECT_ROOT/frontend/miniapp/dist/dev/mp-weixin"
+echo "H5前端: http://localhost:3000"
 echo ""
 echo "查看日志:"
 echo "  Python: tail -f /tmp/python-service.log"
 echo "  Go API: tail -f /tmp/go-api.log"
-echo "  前端: tail -f /tmp/frontend.log"
+echo "  H5前端: tail -f /tmp/frontend-h5.log"
 echo ""
 echo "停止服务: $SCRIPT_DIR/stop-dev.sh"

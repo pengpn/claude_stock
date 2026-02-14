@@ -34,8 +34,8 @@ kill_by_port 8001 "Python分析服务"
 # 停止 Go API 服务 (端口 8000)
 kill_by_port 8000 "Go API服务"
 
-# 停止前端编译进程
-kill_by_name "dev:mp-weixin" "小程序编译"
+# 停止 H5 前端服务 (端口 3000)
+kill_by_port 3000 "H5前端服务"
 
 # 兜底：通过保存的 PID 文件清理残留进程树
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
