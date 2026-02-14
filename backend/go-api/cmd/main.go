@@ -16,9 +16,24 @@ func main() {
 
 	r := gin.Default()
 
-	// 初始化客户端
+	// 初始化Python客户端
 	pythonClient := client.NewPythonClient()
-	llmClient := llm.NewClaudeClient()
+
+	// 根据配置初始化LLM客户端
+	var llmClient llm.LLMClient
+	switch config.AppConfig.LLMProvider {
+	case "claude":
+		llmClient = llm.NewClaudeClient()
+		log.Println("使用 Claude LLM")
+	case "glm":
+		llmClient = llm.NewGLMClient()
+		log.Println("使用 GLM (智谱AI) LLM")
+	case "deepseek":
+		llmClient = llm.NewDeepSeekClient()
+		log.Println("使用 DeepSeek LLM")
+	default:
+		log.Fatalf("不支持的LLM提供商: %s", config.AppConfig.LLMProvider)
+	}
 
 	// 初始化服务
 	orchestrator := service.NewAnalysisOrchestrator(pythonClient, llmClient)

@@ -4,3 +4,4 @@ akshare==1.18.20
 pandas==2.1.4
 numpy==1.26.2
 python-dotenv==1.0.0
+lxml==5.1.0

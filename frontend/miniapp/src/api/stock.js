@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api/v1'
+const API_BASE = 'http://localhost:8000/api/v1'
 
 export const stockApi = {
   // 分析股票（返回SSE连接的task）

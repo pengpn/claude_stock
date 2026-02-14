@@ -42,10 +42,7 @@ func (h *AnalyzeHandler) StreamAnalyze(c *gin.Context) {
 	go func() {
 		if err := h.orchestrator.Analyze(ctx, req.Code, eventChan); err != nil {
 			log.Printf("分析失败: %v", err)
-			eventChan <- service.SSEEvent{
-				Event: "error",
-				Data:  map[string]string{"error": err.Error()},
-			}
+			// 错误已经在orchestrator中发送到eventChan，这里只记录日志
 		}
 	}()
 

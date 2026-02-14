@@ -34,19 +34,24 @@ def analyze():
         # 财务分析
         analysis = financial_analyzer.analyze(stock_data)
 
-        # 合并结果
+        # 合并结果，确保与 Go 端 PythonAnalysisResponse 结构匹配
         result = {
             "code": code,
             "name": stock_data["basic_info"].get("name", ""),
             "basic_info": stock_data["basic_info"],
             "price": stock_data["price"],
-            **analysis
+            **analysis,  # financial_metrics + risks
         }
+
+        logger.info(f"返回分析结果: code={code}, name={result['name']}, "
+                     f"price={result['price'].get('latest_price')}, "
+                     f"pe={result['basic_info'].get('pe_ttm')}, "
+                     f"pb={result['basic_info'].get('pb')}")
 
         return jsonify(result)
 
     except Exception as e:
-        logger.error(f"分析失败: {e}")
+        logger.error(f"分析失败: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

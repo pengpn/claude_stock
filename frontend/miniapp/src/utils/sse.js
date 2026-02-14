@@ -8,6 +8,7 @@ export class SSEClient {
     this.data = data
     this.listeners = {}
     this.requestTask = null
+    this.buffer = ''  // 添加缓冲区处理跨chunk数据
   }
 
   // 监听事件
@@ -53,23 +54,37 @@ export class SSEClient {
 
   // 解析SSE数据
   parseSSE(text) {
-    const lines = text.split('\n')
+    // 将新数据追加到缓冲区
+    this.buffer += text
+
+    // 按行分割，保留最后一个不完整的行
+    const lines = this.buffer.split('\n')
+
+    // 如果缓冲区不是以\n结尾，最后一行是不完整的，需要保留
+    if (!this.buffer.endsWith('\n')) {
+      this.buffer = lines.pop() || ''
+    } else {
+      this.buffer = ''
+    }
+
     let event = 'message'
     let data = ''
 
     lines.forEach(line => {
-      if (line.startsWith('event:')) {
-        event = line.substring(6).trim()
-      } else if (line.startsWith('data:')) {
-        data = line.substring(5).trim()
-      } else if (line === '') {
+      const trimmedLine = line.trim()
+
+      if (trimmedLine.startsWith('event:')) {
+        event = trimmedLine.substring(6).trim()
+      } else if (trimmedLine.startsWith('data:')) {
+        data = trimmedLine.substring(5).trim()
+      } else if (trimmedLine === '') {
         // 空行表示一条消息结束
         if (data) {
           try {
             const parsedData = JSON.parse(data)
             this.emit(event, parsedData)
           } catch (e) {
-            console.error('SSE数据解析失败:', e)
+            console.error('SSE数据解析失败:', e, 'data:', data)
           }
           data = ''
           event = 'message'
@@ -93,5 +108,6 @@ export class SSEClient {
     if (this.requestTask) {
       this.requestTask.abort()
     }
+    this.buffer = ''  // 清理缓冲区
   }
 }
