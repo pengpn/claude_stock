@@ -44,41 +44,69 @@ func (ao *AnalysisOrchestrator) Analyze(ctx context.Context, code string, eventC
 
 	pythonData, err := ao.pythonClient.Analyze(code)
 	if err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": fmt.Sprintf("获取数据失败: %v", err)},
+		}
 		return fmt.Errorf("获取数据失败: %w", err)
 	}
 
 	// 准备LLM输入数据
 	llmData := ao.prepareLLMData(pythonData)
+	log.Printf("准备LLM输入数据: %v", llmData)
 
 	// 存储各步骤结果
 	results := make(map[string]string)
 
+
 	// 步骤1: 综合分析
 	if err := ao.runStep(ctx, llm.StepComprehensive, "综合分析", llmData, results, eventChan, 20); err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": err.Error()},
+		}
 		return err
 	}
 	llmData["comprehensive_analysis"] = results[string(llm.StepComprehensive)]
 
 	// 步骤2: 多头观点
 	if err := ao.runStep(ctx, llm.StepDebateBull, "多头观点", llmData, results, eventChan, 40); err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": err.Error()},
+		}
 		return err
 	}
 	llmData["bull_case"] = results[string(llm.StepDebateBull)]
 
 	// 步骤3: 空头观点
 	if err := ao.runStep(ctx, llm.StepDebateBear, "空头观点", llmData, results, eventChan, 60); err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": err.Error()},
+		}
 		return err
 	}
+
+	llmData["bull_case"] = results[string(llm.StepDebateBull)]
 	llmData["bear_case"] = results[string(llm.StepDebateBear)]
 
 	// 步骤4: 交易员决策
 	if err := ao.runStep(ctx, llm.StepTrader, "交易员决策", llmData, results, eventChan, 80); err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": err.Error()},
+		}
 		return err
 	}
 	llmData["trader_decision"] = results[string(llm.StepTrader)]
 
 	// 步骤5: 最终决策
 	if err := ao.runStep(ctx, llm.StepFinal, "最终决策", llmData, results, eventChan, 100); err != nil {
+		eventChan <- SSEEvent{
+			Event: "error",
+			Data:  map[string]string{"error": err.Error()},
+		}
 		return err
 	}
 
@@ -103,10 +131,13 @@ func (ao *AnalysisOrchestrator) runStep(
 	log.Printf("开始执行: %s", stepName)
 
 	var content string
+	var deltaCount int
 	callback := func(delta string) error {
 		content += delta
-		// 发送流式内容
-		eventChan <- SSEEvent{
+		deltaCount++
+
+		// 立即发送流式内容（无批处理）
+		event := SSEEvent{
 			Event: "analysis_step",
 			Data: map[string]interface{}{
 				"step":     string(step),
@@ -115,15 +146,34 @@ func (ao *AnalysisOrchestrator) runStep(
 				"progress": progress,
 			},
 		}
+		eventChan <- event
+
+		// 每10个delta记录一次
+		if deltaCount%10 == 0 {
+			log.Printf("[%s] 已发送 %d 个delta, 累计长度: %d", stepName, deltaCount, len(content))
+		}
 		return nil
 	}
 
 	if err := ao.llmClient.StreamAnalyze(ctx, step, data, callback); err != nil {
+		log.Printf("[%s] 失败: %v", stepName, err)
 		return fmt.Errorf("%s失败: %w", stepName, err)
 	}
 
 	results[string(step)] = content
-	log.Printf("完成执行: %s", stepName)
+	log.Printf("完成执行: %s, 总delta数: %d, 总长度: %d", stepName, deltaCount, len(content))
+	log.Printf("开始发送步骤完成事件: %s", stepName)
+	// 发送步骤完成事件
+	event := SSEEvent{
+		Event: "step_completed",
+		Data: map[string]interface{}{
+			"step":      string(step),
+			"completed": true,
+		},
+	}
+	log.Printf("发送步骤完成事件: %s", stepName)
+	eventChan <- event
+
 	return nil
 }
 
